@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.Optional;
 
-@FeignClient(name = "gateway-service",  url = "http://localhost:8080",contextId = "userClient", configuration = FeignConfig.class)
+@FeignClient(name = "gateway-service", url = "${GATEWAY_URL:http://localhost:8080}", contextId = "userClient", configuration = FeignConfig.class)
 public interface UserClient {
-    @GetMapping("/users/{id}")
+    @GetMapping("/api/users/{id}")
     User getUser(@PathVariable Long id);
 
     @GetMapping("api/users/findByEmail/{email}")
