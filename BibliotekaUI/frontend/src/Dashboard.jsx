@@ -56,7 +56,7 @@ export function Dashboard() {
   for (const loan of loans) { const email = borrower(loan); if (email) counts.set(email, (counts.get(email) || 0) + 1); }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0].split('@')[0] || 'No data';
 
-  return <div className="library-dashboard"><Header onAddBook={() => setAdding(true)}>
+  return <div className="library-dashboard"><Header onAddBook={librarian ? () => setAdding(true) : undefined}>
     <form className="search-wrapper" onSubmit={search}><input aria-label="Pretrazi po kljucnoj reci" placeholder="Pretrazi po kljucnoj reci" value={keyword} onChange={event => setKeyword(event.target.value)} /><button>Pretrazi</button></form>
   </Header><Stats items={[
     ['Ukupan broj knjiga', books.length, 'book'], ['Ukupan broj autora', new Set(books.map(book => book.author).filter(Boolean)).size, 'pen-fancy'],

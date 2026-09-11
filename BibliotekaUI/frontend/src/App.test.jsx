@@ -143,3 +143,19 @@ test.each([
   expect(screen.queryByRole('button', { name: 'Vrati knjigu' })).toBeNull();
   expect(screen.queryByRole('button', { name: /Borrowed Book/ })).toBeNull();
 });
+
+test('only librarians see the add-book menu item', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond([])));
+  const user = userEvent.setup();
+  render(<Dashboard />);
+  await screen.findByText('Nema knjiga.');
+  await user.click(screen.getByRole('button', { name: /reader/ }));
+  expect(screen.queryByRole('button', { name: 'Dodaj novu knjigu' })).toBeNull();
+  cleanup();
+
+  localStorage.setItem('role', 'LIBRARIAN');
+  render(<Dashboard />);
+  await screen.findByText('Nema knjiga.');
+  await user.click(screen.getByRole('button', { name: /reader/ }));
+  expect(screen.getByRole('button', { name: 'Dodaj novu knjigu' })).toBeTruthy();
+});
