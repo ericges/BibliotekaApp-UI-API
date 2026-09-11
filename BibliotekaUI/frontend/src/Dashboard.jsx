@@ -50,6 +50,7 @@ export function Dashboard() {
   }
 
   const loanedIds = new Set(loans.map(loan => String(loan.bookId ?? loan.book?.id)));
+  const booksById = new Map(books.map(book => [String(book.id), book]));
   const available = (results ?? books).filter(book => !loanedIds.has(String(book.id)));
   const counts = new Map();
   for (const loan of loans) { const email = borrower(loan); if (email) counts.set(email, (counts.get(email) || 0) + 1); }
@@ -61,17 +62,30 @@ export function Dashboard() {
     ['Ukupan broj knjiga', books.length, 'book'], ['Ukupan broj autora', new Set(books.map(book => book.author).filter(Boolean)).size, 'pen-fancy'],
     ['Trenutno pozajmljeno', loans.length, 'hand-holding-heart'], ['Trenutni high score', top, 'calendar-plus'],
   ]} /><Notice message={error} error />{error && <button className="btn btn-secondary" onClick={refresh}>Pokusaj ponovo</button>}
-    <div className="main-content"><section><div className="section-header"><h2>{results ? 'Rezultati pretrage' : 'Najskorije dodato'}</h2></div>
+    <div className="main-content catalog-layout"><section className="catalog-section"><div className="section-header"><h2>{results ? 'Rezultati pretrage' : 'Najskorije dodato'}</h2></div>
       <div className="book-grid">{loading ? <p role="status">Ucitavanje...</p> : available.length ? available.map(book => <button className="book-card" key={book.id} onClick={() => setSelected(book)}>
         <Cover book={book} /><h4>{book.title || book.bookTitle}</h4><div className="author">{book.author || book.bookAuthor}</div><div className="book-meta"><span>{book.isbn || 'N/A'}</span><span className={`status-badge ${book.available === false ? 'borrowed' : 'available'}`}>{book.available === false ? 'borrowed' : 'available'}</span></div>
       </button>) : <p>Nema knjiga.</p>}</div>
-    </section><aside className="lending-panel"><h2>Trenutno pozajmljeno</h2>
+    </section><aside className="lent-section"><div className="section-header"><h2>Trenutno pozajmljeno</h2></div>
+      <div className="book-grid">
       {!loading && loans.length === 0 && <p>Trenutno nema pozajmljenih knjiga!</p>}
-      {[...loans].sort((a, b) => (dueDate(a) || '9999').localeCompare(dueDate(b) || '9999')).map(loan => <div className="lending-item" key={loan.id ?? loan.loanId}>
-        <div className="lending-info"><div className="book-name">{loan.bookTitle || loan.book?.title || loan.title}</div><div className="user-name">{borrower(loan)}</div></div>
-        <div className="lending-date">{dueDate(loan) || 'N/A'}{(loan.overdue || loan.isOverdue) && <span> — Kasni</span>}</div>
-        {librarian && <button className="return-book-btn" disabled={returning !== null} onClick={() => returnBook(loan)}>Vrati knjigu</button>}
-      </div>)}
+      {[...loans].sort((a, b) => (dueDate(a) || '9999').localeCompare(dueDate(b) || '9999')).map(loan => {
+        const catalogBook = booksById.get(String(loan.bookId ?? loan.book?.id));
+        const book = {
+          title: loan.book?.title || catalogBook?.title || loan.bookTitle || loan.title,
+          author: loan.book?.author || catalogBook?.author || loan.bookAuthor,
+          coverUrl: loan.book?.coverUrl || loan.book?.cover_url || loan.book?.cover || catalogBook?.coverUrl || catalogBook?.cover_url || catalogBook?.cover || loan.coverUrl || loan.cover_url || loan.cover,
+        };
+        const overdue = loan.overdue || loan.isOverdue;
+        return <article className="book-card lent-book-card" key={loan.id ?? loan.loanId}>
+          <Cover book={book} /><h4 title={book.title}>{book.title}</h4><div className="author">{book.author}</div>
+          <div className="loan-meta"><div className="user-name">{borrower(loan)}</div>
+            <div className={`lending-date${overdue ? ' overdue' : ''}`}>{dueDate(loan) || 'N/A'}{overdue && <span> — Kasni</span>}</div>
+          </div>
+          {librarian && <button className="btn btn-secondary return-book-btn" disabled={returning !== null} onClick={() => returnBook(loan)}>Vrati knjigu</button>}
+        </article>;
+      })}
+      </div>
     </aside></div><div className="footer-meta"><span>Mina Nikolic 70/2019</span><span className="badge">PMF u Kragujevcu</span></div>
     {selected && <BookDetails book={selected} onClose={() => setSelected(null)} onSaved={refresh} />}
     {adding && <AddBook onClose={() => setAdding(false)} onSaved={refresh} />}
